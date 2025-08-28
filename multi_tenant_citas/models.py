@@ -50,6 +50,7 @@ class Cita(models.Model):
 
 # Este modelo es para vincular a los usuarios con las clínicas
 class UserProfile(models.Model):
+    id = models.BigAutoField(primary_key=True, db_column='id')
     user = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id')
     clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE, db_column='clinica_id')
 
@@ -57,6 +58,6 @@ class UserProfile(models.Model):
         return f"{self.user.username} - {self.clinica.nombre}"
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'user_profile'
         unique_together = (('user', 'clinica'),)
