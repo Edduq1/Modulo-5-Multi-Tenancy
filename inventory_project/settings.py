@@ -69,6 +69,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'inventory_project.wsgi.application'
 
+import os
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -76,11 +77,11 @@ WSGI_APPLICATION = 'inventory_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'multi_tenancy_citas',
-        'USER': 'root',
-        'PASSWORD': 'mysql',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'NAME': os.environ.get('MYSQL_DATABASE','multi_tenancy_citas'),
+        'USER': os.environ.get('MYSQL_USER','root'),
+        'PASSWORD': os.environ.get('MYSQL_PASSWORD','mysql'),
+        'HOST': os.environ.get('MYSQL_HOST','127.0.0.1'),
+        'PORT': os.environ.get('MYSQL_PORT','3306'),
     }
 }
 
