@@ -5,45 +5,45 @@ La estructura del módulo permite que varias clínicas (tenants) trabajen de for
 
 ---
 
-## Gestión de dependencias con `requirements.txt`
+## Product Backlog – Historias de Usuario
 
-Se usa `requirements.txt` para administrar y replicar el entorno de dependencias.
+- **HU01 – Configuración del Entorno de Desarrollo**
+  - Como desarrollador, quiero configurar el entorno (venv, `requirements.txt`, conexión MySQL en `settings.py`) para ejecutar el proyecto localmente.
+  - Criterios de aceptación:
+    - Entorno virtual creado y activado.
+    - Dependencias instaladas desde `requirements.txt`.
+    - Conexión a MySQL operativa y migraciones aplicadas sin errores.
 
-- **Crear y activar el entorno virtual (Windows):**
-  ```powershell
-  python -m venv env
-  .\env\Scripts\activate
-  ```
+- **HU02 – Gestión de Citas por Clínica (CRUD)**
+  - Como recepcionista de una clínica, quiero crear, listar, actualizar y eliminar citas pertenecientes a mi clínica.
+  - Criterios de aceptación:
+    - Operaciones CRUD disponibles para citas de la clínica del usuario.
+    - Validaciones mínimas: fecha/hora obligatoria y relación con paciente.
+    - Un usuario no puede ver/editar citas de otras clínicas.
 
-- **Instalar todas las dependencias del proyecto:**
-  ```powershell
-  pip install -r requirements.txt
-  ```
+- **HU03 – Multi‑Tenancy en Citas**
+  - Como sistema, al crear una cita debe asignarse automáticamente la clínica (tenant) del usuario autenticado, y todas las consultas deben filtrar por dicho tenant.
+  - Criterios de aceptación:
+    - Asignación automática de `clinica` al crear citas.
+    - Aislamiento de datos en `admin.py` y vistas: cada usuario ve solo datos de su clínica.
 
-- **Ejecutar migraciones después de instalar dependencias:**
-  ```powershell
-  python manage.py makemigrations
-  python manage.py migrate
-  ```
+- **HU04 – Acceso y Visualización (Admin/Calendario)**
+  - Como usuario autenticado, quiero acceder al Admin y visualizar las citas filtradas por mi clínica.
+  - Criterios de aceptación:
+    - Permisos aplicados en `admin.py` por clínica.
+    - Listados y filtros del Admin muestran únicamente datos del tenant del usuario.
 
-- **Si instalas nuevas librerías, actualiza `requirements.txt`:**
-  ```powershell
-  pip install nombre-paquete==X.Y.Z
-  pip freeze > requirements.txt
-  ```
-
-- **Actualizar dependencias existentes según `requirements.txt`:**
-  ```powershell
-  pip install -r requirements.txt --upgrade
-  ```
-
-Notas:
-- En Windows, `mysqlclient` puede requerir herramientas de compilación de Visual C++.
-- Usa versiones fijas (`==`) para asegurar entornos reproducibles.
+> Entregable: las citas de Clínica A no se mezclan con las de Clínica B.
 
 ---
 
-## Estructura del Módulo 5
+## Sprint Goal
+
+Implementar la lógica de Multi‑Tenancy para la gestión de citas, asegurando que cada clínica solo vea sus propias citas y que las nuevas se asignen correctamente.
+
+---
+
+## Estructura del Proyecto
 
 ```
 Modulo-5-Multi-Tenancy/
@@ -75,6 +75,51 @@ Modulo-5-Multi-Tenancy/
 - **multi_tenant_citas/**: Lógica de negocio, modelos, vistas, administración y pruebas del módulo de citas multi-tenant.
 - **manage.py**: Punto de entrada para ejecutar comandos de Django.
 - **requirements.txt**: Archivo con las dependencias del proyecto, con versiones fijadas.
+
+---
+
+## Enlace del Trello
+
+Tablero del proyecto: https://trello.com/b/3GnQSD8c/modulo-5-multi-tenancy
+
+---
+
+## Proceso de ejecución
+
+Se usa `requirements.txt` para administrar y replicar el entorno de dependencias y ejecutar el proyecto.
+
+- **Crear y activar el entorno virtual (Windows):**
+  ```powershell
+  python -m venv env
+  .\env\Scripts\activate
+  ```
+
+- **Instalar todas las dependencias del proyecto:**
+  ```powershell
+  pip install -r requirements.txt
+  ```
+
+- **Ejecutar migraciones después de instalar dependencias:**
+  Para crear las tablas desde los modelos de Django
+  ```powershell
+  python manage.py makemigrations
+  python manage.py migrate
+  ```
+
+- **Si instalas nuevas librerías, actualiza `requirements.txt`:**
+  ```powershell
+  pip install nombre-paquete==X.Y.Z
+  pip freeze > requirements.txt
+  ```
+
+- **Actualizar dependencias existentes según `requirements.txt`:**
+  ```powershell
+  pip install -r requirements.txt --upgrade
+  ```
+
+Notas:
+- En Windows, `mysqlclient` puede requerir herramientas de compilación de Visual C++.
+- Usa versiones fijas (`==`) para asegurar entornos reproducibles.
 
 ---
 
@@ -179,17 +224,6 @@ CREATE TABLE user_profile (
 
 ---
 
-## Migraciones en Django
-
-Para crear las tablas desde los modelos de Django:
-
-```sh
-python manage.py makemigrations
-python manage.py migrate
-```
-
----
-
 ## Documentación de lo realizado
 
 - Se implementó la estructura multi-tenant en los modelos y la base de datos.
@@ -208,24 +242,6 @@ python manage.py migrate
 
 ---
 
-## Ejecución
-
-1. Instala dependencias:
-   ```sh
-   pip install -r requirements.txt
-   ```
-2. Configura la base de datos en `settings.py`.
-3. Ejecuta migraciones:
-   ```sh
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-4. Inicia el servidor:
-   ```sh
-   python manage.py runserver
-   ```
-5. Accede al admin en `/admin/` para gestionar clínicas, pacientes y citas.
-
----
+<!-- Sección "Ejecución" eliminada por duplicidad; consolidado en "Proceso de ejecución" -->
 
 **Este módulo garantiza el aislamiento de datos entre clínicas y cumple con todos los criterios del ejercicio de multi-tenancy.**
