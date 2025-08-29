@@ -2,9 +2,9 @@ name: Validación de Módulo 5 (Citas)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ Multi-Tenancy, Testeo-de-github-actions ]
   pull_request:
-    branches: [ main ]
+    branches: [ Multi-Tenancy, Testeo-de-github-actions ]
 
 jobs:
   build:
