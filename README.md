@@ -48,10 +48,14 @@ Implementar la lógica de Multi‑Tenancy para la gestión de citas, asegurando 
 ```
 Modulo-5-Multi-Tenancy/
 │
+├── .github/                    # Configuración de CI (GitHub Actions)
+│   └── workflows/
+│       └── ci.yml              # Pipeline: MySQL en Docker + migrate de Django
+│
 ├── inventory_project/         # Configuración global del proyecto Django
 │   ├── __init__.py
 │   ├── asgi.py
-│   ├── settings.py
+│   ├── settings.py            # Configuración de MySQL y variables de entorno
 │   ├── urls.py
 │   └── wsgi.py
 │
@@ -71,10 +75,71 @@ Modulo-5-Multi-Tenancy/
 └── README.md                  # Documentación del módulo
 ```
 
-- **inventory_project/**: Configuración global y archivos principales del proyecto Django.
+- **.github/workflows/**: Workflows de GitHub Actions para CI. `ci.yml` levanta MySQL en Docker y valida con `python manage.py migrate`.
+- **inventory_project/**: Configuración global del proyecto Django. En `settings.py` se definen la conexión MySQL y el uso de variables de entorno.
 - **multi_tenant_citas/**: Lógica de negocio, modelos, vistas, administración y pruebas del módulo de citas multi-tenant.
 - **manage.py**: Punto de entrada para ejecutar comandos de Django.
-- **requirements.txt**: Archivo con las dependencias del proyecto, con versiones fijadas.
+- **requirements.txt**: Dependencias del proyecto (versionadas para reproducibilidad).
+
+---
+
+## Integración Continua (CI) con GitHub Actions
+
+La carpeta `.github/workflows/` contiene el pipeline de validación. El archivo `ci.yml` levanta un contenedor efímero de **MySQL** con Docker y valida la estructura del proyecto ejecutando las migraciones de Django.
+
+- **Archivo**: `.github/workflows/ci.yml`
+- **Disparadores**: `push` y `pull_request` a las ramas `Multi-Tenancy` y `Testeo-de-github-actions`.
+- **Runner**: `ubuntu-latest`.
+- **Servicio Docker (MySQL 8.0)**:
+  - Variables del servicio: `MYSQL_ROOT_PASSWORD=mysql`, `MYSQL_DATABASE=multi_tenancy_citas`.
+  - Puerto publicado: `3306`.
+  - Healthcheck para esperar a que MySQL esté listo.
+- **Pasos principales**:
+  1. Checkout del repositorio.
+  2. Setup de Python 3.11 y instalación de dependencias con `pip install -r requirements.txt`.
+  3. Exporta `DATABASE_URL` al entorno de GitHub (variable actualmente no usada por `settings.py`).
+  4. Espera breve a que MySQL esté listo.
+  5. Ejecuta `python manage.py migrate`.
+
+### ¿Qué valida este pipeline?
+
+La validación real sucede en el paso `python manage.py migrate`. Django lee los modelos de `multi_tenant_citas/models.py` y sus migraciones; si no hay errores, crea todas las tablas en el contenedor MySQL. Que este paso termine con éxito confirma que:
+
+- La configuración de la base de datos es correcta.
+- Los modelos y migraciones son coherentes.
+- El proyecto es ejecutable en un ambiente limpio y reproducible.
+
+### Variables de entorno y `settings.py`
+
+En `inventory_project/settings.py` se importa `os` y se emplea `os.environ.get()` para leer credenciales y parámetros de conexión:
+
+```python
+import os
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('MYSQL_DATABASE', 'multi_tenancy_citas'),
+        'USER': os.environ.get('MYSQL_USER', 'root'),
+        'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'mysql'),
+        'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('MYSQL_PORT', '3306'),
+    }
+}
+```
+
+- En GitHub Actions, el workflow levanta MySQL con `MYSQL_ROOT_PASSWORD` y `MYSQL_DATABASE` dentro del servicio Docker. Aunque el job no exporta `MYSQL_*` al entorno del runner, los valores por defecto en `settings.py` coinciden con los del servicio (`root`/`mysql`, DB `multi_tenancy_citas`, host `127.0.0.1`, puerto `3306`), por lo que la conexión funciona.
+- Opcionalmente, podrías alinear el workflow para exportar explícitamente `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_HOST`, `MYSQL_PORT` en lugar de `DATABASE_URL`, o adaptar `settings.py` para leer `DATABASE_URL` si prefieres ese patrón.
+
+### ¿Por qué es clave usar `os.environ`?
+
+Sin `import os` y sin leer variables de entorno, el proyecto quedaría rígido y vulnerable:
+
+- No podría adaptarse a distintos entornos (tu máquina local vs. GitHub Actions).
+- Forzaría credenciales fijas en el código, dificultando la seguridad y el versionado.
+- Impediría reproducibilidad en CI/CD y despliegues, al no poder inyectar configuraciones por ambiente.
+
+Con el enfoque actual, el proyecto funciona tanto localmente (usando los valores por defecto si no existen variables) como en CI (donde puedes sobreescribirlos via variables de entorno).
 
 ---
 
