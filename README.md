@@ -214,7 +214,7 @@ Cada clínica accede únicamente a sus propios datos, garantizando privacidad y 
 ## Base de Datos (MySQL)
 
 El proyecto utiliza **MySQL**.  
-Ejemplo de estructura y datos iniciales:
+Script completo para entorno local (incluye tablas de Django y datos de ejemplo):
 
 ```sql
 CREATE DATABASE multi_tenancy_citas;
@@ -226,6 +226,10 @@ CREATE TABLE clinica (
     direccion VARCHAR(255)
 );
 
+INSERT INTO clinica (id, nombre, direccion) VALUES
+(1, 'Clínica Nova', 'Miraflores'),
+(2, 'Bienestar Integral', 'Surco');
+
 CREATE TABLE paciente (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
@@ -234,6 +238,10 @@ CREATE TABLE paciente (
     clinica_id INT NOT NULL,
     FOREIGN KEY (clinica_id) REFERENCES clinica(id)
 );
+
+INSERT INTO paciente (id, nombre, apellido, fecha_nacimiento, clinica_id) VALUES
+(1, 'Ana', 'Pérez', '1990-05-15', 1),
+(2, 'Juan', 'Gómez', '1985-11-20', 2);
 
 CREATE TABLE cita (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -246,6 +254,10 @@ CREATE TABLE cita (
     FOREIGN KEY (clinica_id) REFERENCES clinica(id)
 );
 
+INSERT INTO cita (id, fecha_hora, motivo, paciente_id, clinica_id) VALUES
+(1, '2025-08-28 10:00:00', 'Consulta general', 1, 1),
+(2, '2025-08-28 11:30:00', 'Revisión anual', 2, 2);
+
 CREATE TABLE auth_user (
     id INT AUTO_INCREMENT PRIMARY KEY,
     password VARCHAR(128) NOT NULL,
@@ -255,10 +267,18 @@ CREATE TABLE auth_user (
     is_staff BOOLEAN NOT NULL,
     is_active BOOLEAN NOT NULL,
     last_login DATETIME(6) NULL,
-    date_joined DATETIME(6) NOT NULL,
-    first_name VARCHAR(150) NOT NULL,
-    last_name VARCHAR(150) NOT NULL
+    date_joined DATETIME(6) NOT NULL
 );
+
+ALTER TABLE auth_user
+ADD COLUMN first_name VARCHAR(150) NOT NULL,
+ADD COLUMN last_name VARCHAR(150) NOT NULL;
+
+INSERT INTO auth_user (id, password, is_superuser, username, email, is_staff, is_active, date_joined) VALUES
+(1, 'hash_contrasena_admin', 1, 'admin', 'admin@ejemplo.com', 1, 1, NOW()),
+(2, 'hash_contrasena_clinica_a', 0, 'usuario_clinica_a', 'a@ejemplo.com', 1, 1, NOW()),
+(3, 'hash_contrasena_clinica_b', 0, 'usuario_clinica_b', 'b@ejemplo.com', 1, 1, NOW()),
+(4, 'hash_contrasena_paciente_a', 0, 'paciente_a', 'paciente_a@ejemplo.com', 0, 1, NOW());
 
 CREATE TABLE user_profile (
     user_id INT NOT NULL,
@@ -267,7 +287,55 @@ CREATE TABLE user_profile (
     FOREIGN KEY (clinica_id) REFERENCES clinica(id),
     PRIMARY KEY (user_id, clinica_id)
 );
+
+CREATE INDEX idx_user_profile_user_id ON user_profile (user_id);
+CREATE INDEX idx_user_profile_clinica_id ON user_profile (clinica_id);
+ALTER TABLE user_profile DROP PRIMARY KEY;
+
+ALTER TABLE user_profile
+  ADD COLUMN id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST;
+  
+CREATE UNIQUE INDEX uq_user_profile_user_clinica
+  ON user_profile (user_id, clinica_id);
+
+-- Accesos del usuario a las clínicas (clave para que el admin muestre esas clínicas)
+INSERT INTO user_profile (user_id, clinica_id) VALUES (4, 1);
+INSERT INTO user_profile (user_id, clinica_id) VALUES (4, 2);
+
+INSERT INTO user_profile (user_id, clinica_id) VALUES
+(1, 1), -- El admin tiene acceso a la Clínica Nova
+(1, 2), -- El admin tiene acceso a la Bienestar Integral
+(2, 1), -- El usuario de la Clínica Nova solo tiene acceso a la Clínica Nova
+(3, 2); -- El usuario de la Bienestar Integral solo tiene acceso a la Bienestar Integral
+
+CREATE TABLE auth_user_groups (
+id INT AUTO_INCREMENT PRIMARY KEY,
+user_id INT NOT NULL, 
+group_id INT NOT NULL, 
+FOREIGN KEY (user_id) REFERENCES auth_user(id));
+
+CREATE TABLE auth_user_user_permissions (
+id INT AUTO_INCREMENT PRIMARY KEY, 
+user_id INT NOT NULL, permission_id INT NOT NULL, 
+FOREIGN KEY (user_id) REFERENCES auth_user(id)); 
+
+CREATE TABLE auth_group (
+id INT AUTO_INCREMENT PRIMARY KEY, 
+name VARCHAR(150) NOT NULL UNIQUE); 
+
+CREATE TABLE auth_permission (
+id INT AUTO_INCREMENT PRIMARY KEY, 
+name VARCHAR(255) NOT NULL, 
+content_type_id INT NOT NULL, 
+codename VARCHAR(100) NOT NULL); 
+
+CREATE TABLE django_content_type (
+id INT AUTO_INCREMENT PRIMARY KEY,
+app_label VARCHAR(100) NOT NULL,
+model VARCHAR(100) NOT NULL);
 ```
+
+Nota: varias tablas del bloque anterior (por ejemplo, `auth_user`, `auth_group`, `auth_permission`, `django_content_type` y relaciones) no están definidas en `multi_tenant_citas/models.py`, pero son necesarias para el correcto funcionamiento de Django (autenticación, permisos y Admin). Por eso se incluyen en el script para ambientes locales.
 
 ---
 
