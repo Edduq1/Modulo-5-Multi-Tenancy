@@ -5,33 +5,76 @@ La estructura del módulo permite que varias clínicas (tenants) trabajen de for
 
 ---
 
+## Gestión de dependencias con `requirements.txt`
+
+Se usa `requirements.txt` para administrar y replicar el entorno de dependencias.
+
+- **Crear y activar el entorno virtual (Windows):**
+  ```powershell
+  python -m venv env
+  .\env\Scripts\activate
+  ```
+
+- **Instalar todas las dependencias del proyecto:**
+  ```powershell
+  pip install -r requirements.txt
+  ```
+
+- **Ejecutar migraciones después de instalar dependencias:**
+  ```powershell
+  python manage.py makemigrations
+  python manage.py migrate
+  ```
+
+- **Si instalas nuevas librerías, actualiza `requirements.txt`:**
+  ```powershell
+  pip install nombre-paquete==X.Y.Z
+  pip freeze > requirements.txt
+  ```
+
+- **Actualizar dependencias existentes según `requirements.txt`:**
+  ```powershell
+  pip install -r requirements.txt --upgrade
+  ```
+
+Notas:
+- En Windows, `mysqlclient` puede requerir herramientas de compilación de Visual C++.
+- Usa versiones fijas (`==`) para asegurar entornos reproducibles.
+
+---
+
 ## Estructura del Módulo 5
 
 ```
 Modulo-5-Multi-Tenancy/
 │
 ├── inventory_project/         # Configuración global del proyecto Django
+│   ├── __init__.py
+│   ├── asgi.py
 │   ├── settings.py
 │   ├── urls.py
-│   └── ...
+│   └── wsgi.py
 │
-├── multi_tenant_citas/        # Módulo principal de citas multi-tenant
-│   ├── migrations/
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── models.py
-│   ├── views/
-│   ├── admin.py
+├── multi_tenant_citas/        # App principal de citas multi-tenant
+│   ├── migrations/            # Migraciones de la app
+│   │   └── __init__.py
+│   ├── __init__.py
+│   ├── admin.py               # Admin: permisos por clínica (tenant)
 │   ├── apps.py
+│   ├── models.py              # Models: vínculos Clinica, Paciente y Cita
 │   ├── tests.py
 │   ├── urls.py
-│   └── manage.py
+│   └── views.py
 │
+├── manage.py
+├── requirements.txt
 └── README.md                  # Documentación del módulo
 ```
 
 - **inventory_project/**: Configuración global y archivos principales del proyecto Django.
 - **multi_tenant_citas/**: Lógica de negocio, modelos, vistas, administración y pruebas del módulo de citas multi-tenant.
+- **manage.py**: Punto de entrada para ejecutar comandos de Django.
+- **requirements.txt**: Archivo con las dependencias del proyecto, con versiones fijadas.
 
 ---
 
