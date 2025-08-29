@@ -1,0 +1,50 @@
+name: Validación de Módulo 5 (Citas)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: mysql
+          MYSQL_DATABASE: multi_tenancy_citas
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: 🚀 Clonando el código del repositorio...
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configurando el entorno Python...
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: 📦 Instalando dependencias del proyecto...
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+      working-directory: ./inventory_project
+
+    - name: ⚙️ Preparando la base de datos de prueba...
+      run: |
+        echo "DATABASE_URL=mysql://root:mysql@127.0.0.1:3306/multi_tenancy_citas" >> $GITHUB_ENV
+      
+    - name: ⏳ Esperando a que MySQL esté listo...
+      run: sleep 10
+
+    - name: 🔄 Ejecutando migraciones de Django...
+      run: python manage.py migrate
+      working-directory: ./inventory_project
+
+    - name: ✅ Validando que las migraciones corran sin errores
+      run: |
+        echo "🎉 ¡El workflow ha finalizado con éxito! La estructura de tu proyecto multi-tenancy y las migraciones se han validado correctamente!"
